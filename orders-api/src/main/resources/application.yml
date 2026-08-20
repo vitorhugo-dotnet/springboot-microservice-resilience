@@ -58,6 +58,11 @@ resilience4j:
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: true
         register-health-indicator: true
+        # Circuito aberto NAO deixa o orders-api DOWN. O servico esta saudavel e
+        # fazendo exatamente o que deveria: degradando de forma controlada.
+        # Marcar DOWN aqui faria o orquestrador reiniciar ou tirar do balanceador
+        # um servico que esta funcionando.
+        allow-health-indicator-to-fail: false
         record-exceptions:
           - com.vitorhugo.orders.payments.PaymentsClient$PaymentsUnavailableException
           - java.util.concurrent.TimeoutException
