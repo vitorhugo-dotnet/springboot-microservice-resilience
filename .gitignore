@@ -1,0 +1,44 @@
+## Java
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+replay_pid*
+
+## Maven
+target/
+pom.xml.versionsBackup
+
+## IntelliJ / Eclipse / VS Code
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+.classpath
+.project
+.settings/
+bin/
+!**/src/**/bin/
+.vscode/
+
+## Spring Boot
+*.original
+application-local.yml
+application-local.properties
+
+## Logs e temporarios
+*.log
+logs/
+*.tmp
+*.bak
+*.pid
+
+## Ambiente
+.env
+.env.local
+
+## SO
+.DS_Store
+Thumbs.db
