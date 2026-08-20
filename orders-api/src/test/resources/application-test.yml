@@ -31,7 +31,12 @@ resilience4j:
         sliding-window-size: 10
         minimum-number-of-calls: 5
         failure-rate-threshold: 50
-        wait-duration-in-open-state: 1s
+        # Longo e sem transicao automatica de proposito: nos testes as transicoes
+        # OPEN -> HALF_OPEN sao disparadas explicitamente pelo registry. Dormir
+        # esperando um timer produz teste lento e intermitente, e o que estaria
+        # sendo verificado seria o relogio do Resilience4j, nao o nosso codigo.
+        # O tempo real de 15s aparece no roteiro de demonstracao do README.
+        wait-duration-in-open-state: 30s
         permitted-number-of-calls-in-half-open-state: 3
         automatic-transition-from-open-to-half-open-enabled: false
         register-health-indicator: true
