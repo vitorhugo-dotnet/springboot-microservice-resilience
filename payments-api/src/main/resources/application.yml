@@ -5,6 +5,14 @@ spring:
   application:
     name: payments-api
 
+# Comportamento dos modos de falha simulados.
+payments:
+  # Atraso aplicado no modo SLOW. Bem acima do timeout do orders-api (1.5s),
+  # de proposito: e o modo que prova que o timeout corta a chamada.
+  slow-delay: 5s
+  # Fracao das chamadas que falham no modo FLAKY.
+  flaky-failure-rate: 0.5
+
 management:
   endpoints:
     web:
@@ -13,3 +21,7 @@ management:
   endpoint:
     health:
       show-details: always
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{correlationId:-}]"
