@@ -52,6 +52,15 @@ class PaymentAuthorizationControllerTest {
     }
 
     @Test
+    void deveResponder422NoModoDeclined() throws Exception {
+        holder.set(PaymentMode.DECLINED);
+
+        mockMvc.perform(post("/payments/authorize").contentType(APPLICATION_JSON).content(CORPO))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.reason").value("saldo insuficiente"));
+    }
+
+    @Test
     void deveRejeitarPayloadInvalido() throws Exception {
         mockMvc.perform(post("/payments/authorize")
                         .contentType(APPLICATION_JSON)

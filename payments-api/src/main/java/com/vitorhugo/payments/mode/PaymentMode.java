@@ -18,5 +18,14 @@ public enum PaymentMode {
     FAIL,
 
     /** Responde 500 numa fracao das chamadas. */
-    FLAKY
+    FLAKY,
+
+    /**
+     * Responde 422: o provedor esta saudavel e recusou o pagamento.
+     *
+     * <p>Nao faz parte do roteiro classico de falhas, mas existe para provar a
+     * diferenca entre "a dependencia quebrou" e "a dependencia disse nao" — so a
+     * primeira deve abrir o circuito.
+     */
+    DECLINED
 }

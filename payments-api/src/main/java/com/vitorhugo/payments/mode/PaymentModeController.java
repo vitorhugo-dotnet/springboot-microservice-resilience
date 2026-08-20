@@ -57,7 +57,8 @@ public class PaymentModeController {
     static class UnknownPaymentModeException extends RuntimeException {
 
         UnknownPaymentModeException(String mode) {
-            super("modo desconhecido: '%s'. Use um de: SUCCESS, SLOW, FAIL, FLAKY".formatted(mode));
+            super("modo desconhecido: '%s'. Use um de: SUCCESS, SLOW, FAIL, FLAKY, DECLINED"
+                    .formatted(mode));
         }
     }
 }

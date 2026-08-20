@@ -36,4 +36,11 @@ public class PaymentAuthorizationController {
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("error", e.getMessage()));
     }
+
+    @ExceptionHandler(PaymentDeclinedException.class)
+    public ResponseEntity<Map<String, String>> handleDeclined(PaymentDeclinedException e) {
+        log.info("pagamento recusado: {}", e.getMessage());
+        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(Map.of("reason", e.getMessage()));
+    }
 }

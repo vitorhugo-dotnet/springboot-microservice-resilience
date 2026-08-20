@@ -66,6 +66,7 @@ public class PaymentAuthorizationService {
                             "provedor de pagamento instavel (modo FLAKY)");
                 }
             }
+            case DECLINED -> throw new PaymentDeclinedException("saldo insuficiente");
         }
 
         return new AuthorizationResponse(
