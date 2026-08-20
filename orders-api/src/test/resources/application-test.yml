@@ -1,0 +1,49 @@
+# Mesmas politicas do application.yml, com numeros menores para a suite rodar
+# rapido. O que muda e a escala, nao o comportamento: janela e limiar continuam
+# proporcionais, e a taxa de falha continua sendo 50%.
+payments:
+  base-url: http://localhost:0
+
+resilience4j:
+  timelimiter:
+    instances:
+      payments:
+        timeout-duration: 1500ms
+        cancel-running-future: true
+
+  retry:
+    instances:
+      payments:
+        max-attempts: 2
+        wait-duration: 50ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+        ignore-exceptions:
+          - io.github.resilience4j.circuitbreaker.CallNotPermittedException
+          - io.github.resilience4j.bulkhead.BulkheadFullException
+
+  circuitbreaker:
+    instances:
+      payments:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 1s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: false
+        register-health-indicator: true
+        record-exceptions:
+          - com.vitorhugo.orders.payments.PaymentsClient$PaymentsUnavailableException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+        ignore-exceptions:
+          - io.github.resilience4j.bulkhead.BulkheadFullException
+
+  bulkhead:
+    instances:
+      payments:
+        max-concurrent-calls: 8
+        max-wait-duration: 0

@@ -5,11 +5,88 @@ spring:
   application:
     name: orders-api
 
+payments:
+  base-url: ${PAYMENTS_BASE_URL:http://localhost:8081}
+
+# ---------------------------------------------------------------------------
+# Politicas de resiliencia. Todas na instancia "payments" — uma dependencia,
+# um conjunto de politicas. Nenhum threshold vive no codigo Java.
+#
+# Ordem em que os aspectos sao aplicados:
+#   Retry ( CircuitBreaker ( TimeLimiter ( Bulkhead ( chamada ) ) ) )
+# ---------------------------------------------------------------------------
+resilience4j:
+
+  timelimiter:
+    instances:
+      payments:
+        # Curto de proposito. O objetivo nao e esperar o pagamento responder,
+        # e liberar a thread do orders-api rapido.
+        timeout-duration: 1500ms
+        cancel-running-future: true
+
+  retry:
+    instances:
+      payments:
+        # 2 tentativas no total, nao 2 extras. Retry generoso demais amplifica
+        # o incidente: cada cliente vira N clientes em cima de quem ja caiu.
+        max-attempts: 2
+        wait-duration: 200ms
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2
+        # Jitter: sem ele, todas as instancias retentam no mesmo instante e
+        # criam ondas sincronizadas de carga em cima do servico ja degradado.
+        enable-randomized-wait: true
+        randomized-wait-factor: 0.5
+        ignore-exceptions:
+          # Circuito aberto e bulkhead cheio sao decisoes, nao falhas transitorias.
+          # Retentar aqui e insistir numa porta que foi fechada de proposito.
+          - io.github.resilience4j.circuitbreaker.CallNotPermittedException
+          - io.github.resilience4j.bulkhead.BulkheadFullException
+
+  circuitbreaker:
+    instances:
+      payments:
+        sliding-window-type: COUNT_BASED
+        sliding-window-size: 20
+        # Nao decide nada antes de ter amostra suficiente. Abrir na primeira
+        # falha isolada e pior do que nao ter circuit breaker.
+        minimum-number-of-calls: 10
+        failure-rate-threshold: 50
+        # Tempo que a dependencia tem para respirar antes do primeiro teste.
+        wait-duration-in-open-state: 15s
+        permitted-number-of-calls-in-half-open-state: 3
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+        record-exceptions:
+          - com.vitorhugo.orders.payments.PaymentsClient$PaymentsUnavailableException
+          - java.util.concurrent.TimeoutException
+          - java.io.IOException
+        ignore-exceptions:
+          - io.github.resilience4j.bulkhead.BulkheadFullException
+
+  bulkhead:
+    instances:
+      payments:
+        # Teto de chamadas simultaneas ao pagamento. E o que impede que uma
+        # dependencia lenta consuma todas as threads do orders-api.
+        max-concurrent-calls: 8
+        # Zero de proposito: sob saturacao, rejeitar na hora e melhor do que
+        # enfileirar e virar mais uma fila invisivel acumulando latencia.
+        max-wait-duration: 0
+
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,metrics,prometheus
+        include: health,info,metrics,prometheus,circuitbreakers,circuitbreakerevents
   endpoint:
     health:
       show-details: always
+  health:
+    circuitbreakers:
+      enabled: true
+
+logging:
+  pattern:
+    level: "%5p [${spring.application.name},%X{correlationId:-}]"
