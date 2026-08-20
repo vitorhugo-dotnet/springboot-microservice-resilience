@@ -269,13 +269,27 @@ payments-api  | INFO [payments-api,demo-1] ... autorizando pedido 9dab782b-... n
 
 O `X-Correlation-Id` atravessa o filtro HTTP, o **pool de threads** do cliente (via `MdcPropagatingExecutor`) e o header da chamada remota. Sem propagar o MDC pelo pool, os logs mais interessantes de um incidente — os do retry, do timeout e do fallback — sairiam sem rastro nenhum.
 
+### 9. Métricas para dashboard e alerta
+
+```bash
+curl -s http://localhost:8080/actuator/prometheus | grep '^resilience4j_circuitbreaker_state'
+```
+
+```
+resilience4j_circuitbreaker_state{name="payments",state="closed"} 1.0
+resilience4j_circuitbreaker_state{name="payments",state="open"} 0.0
+resilience4j_circuitbreaker_state{name="payments",state="half_open"} 0.0
+```
+
+São 31 séries do Resilience4j no endpoint (estado, taxa de falha, latência das chamadas, permits do bulkhead, tentativas de retry). `resilience4j_circuitbreaker_state{state="open"} == 1` é o alerta que importa: significa que uma dependência caiu e o serviço já está degradando de propósito.
+
 ## Testes
 
 ```bash
 JAVA_HOME="F:\graalvm-jdk-21.0.8+12.1" mvn test
 ```
 
-38 testes. Os que carregam o peso do projeto:
+52 testes (14 no `payments-api`, 38 no `orders-api`). Os que carregam o peso do projeto:
 
 | Teste | O que prova |
 | --- | --- |
