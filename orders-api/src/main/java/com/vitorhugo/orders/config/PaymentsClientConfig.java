@@ -2,13 +2,20 @@ package com.vitorhugo.orders.config;
 
 import java.net.http.HttpClient;
 import java.time.Duration;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import com.vitorhugo.orders.observability.CorrelationId;
+import com.vitorhugo.orders.observability.MdcPropagatingExecutor;
+import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.ClientHttpRequestInterceptor;
 import org.springframework.http.client.JdkClientHttpRequestFactory;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClient;
 
 @Configuration
@@ -49,11 +56,28 @@ public class PaymentsClientConfig {
         return RestClient.builder()
                 .baseUrl(baseUrl)
                 .requestFactory(requestFactory)
+                .requestInterceptor(correlationIdInterceptor())
                 .build();
     }
 
+    /** Leva o correlation id adiante, para que o log dos dois servicos amarre. */
+    private ClientHttpRequestInterceptor correlationIdInterceptor() {
+        return (request, body, execution) -> {
+            String correlationId = MDC.get(CorrelationId.MDC_KEY);
+            if (StringUtils.hasText(correlationId)) {
+                request.getHeaders().set(CorrelationId.HEADER, correlationId);
+            }
+            return execution.execute(request, body);
+        };
+    }
+
     @Bean(destroyMethod = "shutdown")
-    ExecutorService paymentsExecutor() {
+    ExecutorService paymentsExecutorService() {
         return Executors.newFixedThreadPool(POOL_SIZE, Thread.ofPlatform().name("payments-", 0).factory());
+    }
+
+    @Bean
+    Executor paymentsExecutor(@Qualifier("paymentsExecutorService") ExecutorService delegate) {
+        return new MdcPropagatingExecutor(delegate);
     }
 }
