@@ -21,6 +21,7 @@
     <modules>
         <module>payments-api</module>
         <module>orders-api</module>
+        <module>demo-ui</module>
     </modules>
 
     <properties>
