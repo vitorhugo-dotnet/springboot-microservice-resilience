@@ -57,6 +57,7 @@ class DemoControllerTest {
                 .andExpect(model().attributeExists("orderForm"))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("cdn.tailwindcss.com")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("flowbite")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Modo atual consultado.")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("SUCCESS")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("SLOW")))
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("FAIL")))
