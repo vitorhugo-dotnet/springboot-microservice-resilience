@@ -1,4 +1,4 @@
-# Build do reator inteiro: o modulo depende do pom pai.
+# Build do reator inteiro: o modulo depende do pom pai e do payments-api.
 FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /build
 
@@ -13,11 +13,11 @@ RUN mvn -B -q dependency:go-offline -DskipTests
 COPY payments-api/src payments-api/src
 COPY orders-api/src orders-api/src
 COPY demo-ui/src demo-ui/src
-RUN mvn -B -q -pl orders-api -am package -DskipTests
+RUN mvn -B -q -pl demo-ui -am package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /build/orders-api/target/orders-api-*.jar app.jar
+COPY --from=build /build/demo-ui/target/demo-ui-*.jar app.jar
 
-EXPOSE 8080
+EXPOSE 8082
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

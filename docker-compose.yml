@@ -37,6 +37,24 @@ services:
     networks:
       - resilience
 
+  demo-ui:
+    build:
+      context: .
+      dockerfile: demo-ui/Dockerfile
+    container_name: demo-ui
+    ports:
+      - "8082:8082"
+    environment:
+      PAYMENTS_BASE_URL: http://payments-api:8081
+      ORDERS_BASE_URL: http://orders-api:8080
+    depends_on:
+      payments-api:
+        condition: service_healthy
+      orders-api:
+        condition: service_healthy
+    networks:
+      - resilience
+
 networks:
   resilience:
     driver: bridge

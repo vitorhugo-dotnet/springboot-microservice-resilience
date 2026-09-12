@@ -5,17 +5,19 @@ WORKDIR /build
 COPY pom.xml .
 COPY payments-api/pom.xml payments-api/
 COPY orders-api/pom.xml orders-api/
+COPY demo-ui/pom.xml demo-ui/
 # Baixa as dependencias numa camada separada, para que mudar codigo nao
 # invalide o cache do download.
 RUN mvn -B -q dependency:go-offline -DskipTests
 
 COPY payments-api/src payments-api/src
 COPY orders-api/src orders-api/src
+COPY demo-ui/src demo-ui/src
 RUN mvn -B -q -pl payments-api -am package -DskipTests
 
 FROM eclipse-temurin:21-jre
 WORKDIR /app
-COPY --from=build /build/payments-api/target/payments-api-*.jar app.jar
+COPY --from=build /build/payments-api/target/payments-api-*-exec.jar app.jar
 
 EXPOSE 8081
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]
