@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vitorhugo.payments.mode.PaymentMode;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.ResourceAccessException;
@@ -16,6 +17,23 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 import static org.springframework.test.web.client.response.MockRestResponseCreators.withSuccess;
 
 class PaymentsApiClientTest {
+
+    @Test
+    void currentModeReturnsNullBodyUnchangedForNoContentResponse() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://payments.test");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        PaymentsApiClient client = new PaymentsApiClient(builder.build(), new ObjectMapper(), "http://payments.test");
+        server.expect(requestTo("http://payments.test/payments/mode"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(org.springframework.test.web.client.response.MockRestResponseCreators.withStatus(HttpStatus.NO_CONTENT));
+
+        ApiCallResult result = client.currentMode();
+
+        assertThat(result.status()).isEqualTo(204);
+        assertThat(result.body()).isNull();
+        assertThat(result.successful()).isTrue();
+        server.verify();
+    }
 
     @Test
     void switchModePostsLowercaseModeAndReturnsPrettySuccessfulResponse() {

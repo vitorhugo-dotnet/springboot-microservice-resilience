@@ -20,6 +20,23 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
 class OrdersApiClientTest {
 
     @Test
+    void resilienceStatusReturnsNullBodyUnchangedForNoContentResponse() {
+        RestClient.Builder builder = RestClient.builder().baseUrl("http://orders.test");
+        MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();
+        OrdersApiClient client = new OrdersApiClient(builder.build(), new ObjectMapper(), "http://orders.test");
+        server.expect(requestTo("http://orders.test/resilience/status"))
+                .andExpect(method(HttpMethod.GET))
+                .andRespond(withStatus(org.springframework.http.HttpStatus.NO_CONTENT));
+
+        ApiCallResult result = client.resilienceStatus();
+
+        assertThat(result.status()).isEqualTo(204);
+        assertThat(result.body()).isNull();
+        assertThat(result.successful()).isTrue();
+        server.verify();
+    }
+
+    @Test
     void createOrderPostsExpectedJsonAndReturnsCreatedResponse() {
         RestClient.Builder builder = RestClient.builder().baseUrl("http://orders.test");
         MockRestServiceServer server = MockRestServiceServer.bindTo(builder).build();

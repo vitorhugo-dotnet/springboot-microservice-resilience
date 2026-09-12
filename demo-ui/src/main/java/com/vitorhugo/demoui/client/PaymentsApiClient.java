@@ -86,6 +86,9 @@ public class PaymentsApiClient {
     }
 
     private String prettyPrint(String body) {
+        if (body == null || body.isBlank()) {
+            return body;
+        }
         try {
             return objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(objectMapper.readTree(body));
         } catch (JsonProcessingException exception) {
