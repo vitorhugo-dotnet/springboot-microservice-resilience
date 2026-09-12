@@ -12,6 +12,7 @@ pom.xml.versionsBackup
 
 ## IntelliJ / Eclipse / VS Code
 .idea/
+.superpowers/
 *.iml
 *.iws
 *.ipr
