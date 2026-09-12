@@ -23,6 +23,22 @@ Uma dependência degradada derruba o serviço inteiro. O objetivo aqui é conter
 - JUnit 5, WireMock 3, AssertJ
 - Docker Compose
 
+## Resilience4j: para que serve cada peça
+
+O **Resilience4j** é uma biblioteca de tolerância a falhas para chamadas entre serviços. Ela não faz uma dependência indisponível voltar a funcionar; ela define como o serviço chamador deve reagir para limitar espera, carga e efeito cascata. As políticas podem ser configuradas por instância (neste projeto, `payments`), aplicadas por anotações e acompanhadas por health checks e métricas.
+
+| Peça | Para que serve | O que faz na prática | Uso neste projeto |
+| --- | --- | --- | --- |
+| **CircuitBreaker** | Parar de chamar uma dependência comprovadamente ruim. | Mede chamadas em uma janela. Ao ultrapassar a taxa de falhas configurada, muda de `CLOSED` para `OPEN` e rejeita novas chamadas sem acessar o `payments-api`. Depois de uma espera, entra em `HALF_OPEN` para testar poucas chamadas antes de fechar ou abrir de novo. | Usado para evitar insistir no pagamento depois de falhas repetidas. |
+| **Retry** | Tratar falhas transitórias. | Repete a operação apenas para erros elegíveis. Backoff aumenta o intervalo entre tentativas; jitter varia esse intervalo para evitar que várias instâncias retentem juntas. | Usado com no máximo duas tentativas. Não repete circuito aberto, nem bulkhead cheio. |
+| **TimeLimiter** | Limitar quanto tempo o chamador espera por uma operação assíncrona. | Completa o `CompletableFuture` com timeout após o prazo configurado, para que o request possa seguir para o fallback. | Usado com 1,5 s por tentativa. Não substitui o timeout do cliente HTTP nem garante interromper I/O bloqueante. |
+| **Bulkhead** | Isolar capacidade para uma dependência. | No tipo `SEMAPHORE`, libera apenas uma quantidade fixa de chamadas concorrentes; quando todos os permits estão ocupados, rejeita o excedente. No tipo `THREADPOOL`, usa um pool separado. | Usado como semáforo com oito chamadas e espera zero, protegendo os recursos do `orders-api`. |
+| **RateLimiter** | Proteger um serviço contra excesso de tráfego em uma janela de tempo. | Concede um número limitado de permissões por período; ao acabar a cota, a chamada espera pelo limite configurado ou é rejeitada. | **Não é usado**: ele protege a taxa de chamadas; o problema demonstrado aqui é uma dependência lenta ou falha. |
+| **Fallback** | Degradar de forma útil quando uma política não consegue concluir a chamada. | Recebe a exceção final e transforma a falha técnica em uma resposta de domínio. Não é um módulo isolado: é um método associado à anotação externa. | Cria um pedido `PAYMENT_PENDING`, coloca a autorização na fila e responde `202` em vez de expor um `500`. |
+| **Anotações, registries e Micrometer** | Integrar e observar as políticas. | `@Retry`, `@CircuitBreaker`, `@TimeLimiter` e `@Bulkhead` aplicam as instâncias nomeadas configuradas no YAML. Os registries expõem seu estado; Micrometer publica métricas pelo Actuator. | As quatro anotações usam a instância `payments`; `/resilience/status` e `/actuator/prometheus` tornam o comportamento visível. |
+
+Essas peças se complementam, mas não são intercambiáveis: **retry** tenta recuperar uma falha pontual; **time limiter** limita a espera; **bulkhead** limita a concorrência; **circuit breaker** interrompe uma sequência de falhas; e **fallback** decide a resposta de negócio. Aplicar retry a uma recusa de negócio ou usar circuit breaker como substituto de limite de concorrência produz o efeito errado.
+
 ## Arquitetura
 
 ```mermaid
