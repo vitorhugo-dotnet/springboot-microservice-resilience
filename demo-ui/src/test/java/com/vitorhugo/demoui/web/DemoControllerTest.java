@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.mock.web.MockHttpSession;
 
 import java.math.BigDecimal;
 
@@ -89,6 +90,22 @@ class DemoControllerTest {
                 .andExpect(flash().attribute("modeResult", MODE_UPDATED));
 
         verify(paymentsApiClient).switchMode(PaymentMode.FAIL);
+    }
+
+    @Test
+    void modeCommandFollowedByRedirectRendersTheOrderForm() throws Exception {
+        when(paymentsApiClient.switchMode(PaymentMode.SUCCESS)).thenReturn(MODE_UPDATED);
+        when(paymentsApiClient.currentMode()).thenReturn(CURRENT_MODE);
+        MockHttpSession session = new MockHttpSession();
+
+        mockMvc.perform(post("/modes/success").session(session))
+                .andExpect(status().is3xxRedirection());
+
+        mockMvc.perform(get("/").session(session))
+                .andExpect(status().isOk())
+                .andExpect(view().name("index"))
+                .andExpect(model().attributeExists("orderForm"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Modo alterado.")));
     }
 
     @Test

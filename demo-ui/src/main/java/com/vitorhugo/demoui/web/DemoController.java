@@ -4,6 +4,7 @@ import com.vitorhugo.demoui.client.ApiCallResult;
 import com.vitorhugo.demoui.client.OrdersApiClient;
 import com.vitorhugo.demoui.client.PaymentsApiClient;
 import com.vitorhugo.payments.mode.PaymentMode;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,6 +32,13 @@ public class DemoController {
     public String home(Model model) {
         populatePage(model);
         return "index";
+    }
+
+    @ModelAttribute
+    public void addOrderFormForPage(Model model, HttpServletRequest request) {
+        if (!request.getRequestURI().endsWith("/orders")) {
+            model.addAttribute("orderForm", new CreateOrderForm(null, null));
+        }
     }
 
     @PostMapping("/modes/{mode}")
@@ -70,9 +78,6 @@ public class DemoController {
     private void populatePage(Model model) {
         model.addAttribute("modes", PaymentMode.values());
         model.addAttribute("currentModeResult", paymentsApiClient.currentMode());
-        if (!model.containsAttribute("orderForm")) {
-            model.addAttribute("orderForm", new CreateOrderForm(null, null));
-        }
     }
 
     private ApiCallResult invalidModeResult(String mode) {
