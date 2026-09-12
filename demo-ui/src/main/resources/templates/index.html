@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laboratório de Resiliência</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.5.2/flowbite.min.js"></script>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100">
+<main class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <header class="mb-8 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-xl shadow-cyan-950/30">
+        <p class="mb-2 text-sm font-semibold uppercase tracking-[0.2em] text-cyan-400">microservice-resilience</p>
+        <h1 class="text-3xl font-bold tracking-tight text-white sm:text-4xl">Laboratório de resiliência</h1>
+        <p class="mt-3 max-w-3xl text-slate-300">Altere o comportamento do pagamento, envie pedidos e acompanhe as respostas entre os serviços.</p>
+    </header>
+
+    <section aria-label="Alertas de operações" class="mb-6 space-y-3">
+        <div th:if="${modeResult != null}" role="alert"
+             th:classappend="${modeResult.successful} ? ' border-emerald-700 bg-emerald-950/60 text-emerald-200' : ' border-rose-700 bg-rose-950/60 text-rose-200'"
+             class="flex items-start rounded-lg border p-4 text-sm">
+            <svg class="me-3 mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 00-1-1zm0 8a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+            <div><span class="font-medium" th:text="${modeResult.successful} ? 'Modo atualizado.' : 'Não foi possível alterar o modo.'">Resultado do modo.</span><span class="ms-1" th:text="${modeResult.friendlyMessage}">Mensagem da operação.</span></div>
+        </div>
+        <div th:if="${orderResult != null}" role="alert"
+             th:classappend="${orderResult.successful} ? ' border-emerald-700 bg-emerald-950/60 text-emerald-200' : ' border-rose-700 bg-rose-950/60 text-rose-200'"
+             class="flex items-start rounded-lg border p-4 text-sm">
+            <svg class="me-3 mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 00-1 1v3a1 1 0 002 0V7a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+            <div><span class="font-medium" th:text="${orderResult.successful} ? 'Pedido processado.' : 'Não foi possível criar o pedido.'">Resultado do pedido.</span><span class="ms-1" th:text="${orderResult.friendlyMessage}">Mensagem da operação.</span></div>
+        </div>
+        <div th:if="${resilienceResult != null}" role="alert"
+             th:classappend="${resilienceResult.successful} ? ' border-sky-700 bg-sky-950/60 text-sky-200' : ' border-rose-700 bg-rose-950/60 text-rose-200'"
+             class="flex items-start rounded-lg border p-4 text-sm">
+            <svg class="me-3 mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M18 10A8 8 0 11 2 10a8 8 0 0116 0zm-8-4a1 1 0 00-1-1h3a1 1 0 100-2h-3a1 1 0 00-1 1v1zm1 3a1 1 0 00-.707.293l-2 2a1 1 0 101.414 1.414L10 14.414l1.293 1.293a1 1 0 001.414-1.414l-2-2A1 1 0 0010 12z" clip-rule="evenodd"/></svg>
+            <div><span class="font-medium" th:text="${resilienceResult.successful} ? 'Status atualizado.' : 'Não foi possível consultar a resiliência.'">Resultado da resiliência.</span><span class="ms-1" th:text="${resilienceResult.friendlyMessage}">Mensagem da operação.</span></div>
+        </div>
+    </section>
+
+    <div class="grid gap-6 lg:grid-cols-5">
+        <section class="space-y-6 lg:col-span-3">
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+                <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
+                    <div><h2 class="text-xl font-semibold text-white">Modo do Payments API</h2><p class="mt-1 text-sm text-slate-400">Escolha o cenário que será simulado na próxima autorização.</p></div>
+                    <span class="rounded-full bg-cyan-950 px-3 py-1 text-xs font-medium text-cyan-300" th:text="${currentModeResult != null and currentModeResult.body != null ? currentModeResult.body : 'Modo indisponível'}">Modo atual</span>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <form th:each="mode : ${modes}" method="post" th:action="@{'/modes/' + ${#strings.toLowerCase(mode.name())}}">
+                        <button type="submit"
+                                th:text="${mode.name()}"
+                                th:classappend="${currentModeResult != null and currentModeResult.body != null and #strings.contains(currentModeResult.body, mode.name()) ? ' bg-cyan-500 text-slate-950 ring-2 ring-cyan-300' : ' border border-slate-600 bg-slate-800 text-slate-200 hover:border-cyan-500 hover:bg-slate-700'}"
+                                class="rounded-lg px-4 py-2 text-sm font-semibold transition focus:outline-none focus:ring-4 focus:ring-cyan-800">SUCCESS</button>
+                    </form>
+                </div>
+            </article>
+
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+                <h2 class="text-xl font-semibold text-white">Criar pedido</h2>
+                <p class="mt-1 text-sm text-slate-400">Envie uma autorização ao Orders API.</p>
+                <form class="mt-5 grid gap-4 sm:grid-cols-2" method="post" th:action="@{/orders}" th:object="${orderForm}" novalidate>
+                    <div><label class="mb-2 block text-sm font-medium text-slate-200" for="customerId">Cliente</label><input id="customerId" type="text" th:field="*{customerId}" placeholder="customer-123" class="block w-full rounded-lg border border-slate-600 bg-slate-800 p-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:ring-cyan-500" th:classappend="${#fields.hasErrors('customerId')} ? ' border-rose-500' : ''"><p class="mt-1 text-sm text-rose-400" th:if="${#fields.hasErrors('customerId')}" th:errors="*{customerId}">Cliente inválido</p></div>
+                    <div><label class="mb-2 block text-sm font-medium text-slate-200" for="amount">Valor</label><input id="amount" type="number" min="0.01" step="0.01" th:field="*{amount}" placeholder="10.50" class="block w-full rounded-lg border border-slate-600 bg-slate-800 p-2.5 text-sm text-white placeholder-slate-500 focus:border-cyan-500 focus:ring-cyan-500" th:classappend="${#fields.hasErrors('amount')} ? ' border-rose-500' : ''"><p class="mt-1 text-sm text-rose-400" th:if="${#fields.hasErrors('amount')}" th:errors="*{amount}">Valor inválido</p></div>
+                    <div class="sm:col-span-2"><button type="submit" class="rounded-lg bg-cyan-500 px-5 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-400 focus:outline-none focus:ring-4 focus:ring-cyan-800">Criar pedido</button></div>
+                </form>
+            </article>
+        </section>
+
+        <aside class="space-y-6 lg:col-span-2">
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg"><h2 class="text-xl font-semibold text-white">Circuit breaker</h2><p class="mt-1 text-sm text-slate-400">Consulte o estado do mecanismo de proteção do Orders API.</p><form class="mt-5" method="post" th:action="@{/resilience/refresh}"><button type="submit" class="rounded-lg border border-cyan-700 bg-cyan-950 px-5 py-2.5 text-sm font-semibold text-cyan-200 hover:bg-cyan-900 focus:outline-none focus:ring-4 focus:ring-cyan-800">Atualizar status</button></form></article>
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg" th:if="${currentModeResult != null}"><h2 class="text-xl font-semibold text-white">Consulta do modo</h2><dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm"><dt class="text-slate-400">Método</dt><dd class="font-mono text-slate-200" th:text="${currentModeResult.method}">GET</dd><dt class="text-slate-400">URL</dt><dd class="break-all font-mono text-slate-200" th:text="${currentModeResult.url}">URL</dd><dt class="text-slate-400">HTTP</dt><dd><span class="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-cyan-300" th:text="${currentModeResult.status != null ? currentModeResult.status : 'sem resposta HTTP'}">200</span></dd></dl><button type="button" class="mt-4 text-sm font-medium text-cyan-300 hover:text-cyan-200" data-collapse-toggle="technical-current" aria-expanded="false" aria-controls="technical-current">Ver resposta técnica</button><div id="technical-current" class="hidden mt-3"><pre class="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300" th:text="${currentModeResult.body != null ? currentModeResult.body : currentModeResult.friendlyMessage}">Resposta</pre></div></article>
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg" th:if="${modeResult != null}"><h2 class="text-xl font-semibold text-white">Alteração do modo</h2><dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm"><dt class="text-slate-400">Método</dt><dd class="font-mono text-slate-200" th:text="${modeResult.method}">POST</dd><dt class="text-slate-400">URL</dt><dd class="break-all font-mono text-slate-200" th:text="${modeResult.url}">URL</dd><dt class="text-slate-400">HTTP</dt><dd><span class="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-cyan-300" th:text="${modeResult.status != null ? modeResult.status : 'sem resposta HTTP'}">200</span></dd></dl><button type="button" class="mt-4 text-sm font-medium text-cyan-300 hover:text-cyan-200" data-collapse-toggle="technical-mode" aria-expanded="false" aria-controls="technical-mode">Ver resposta técnica</button><div id="technical-mode" class="hidden mt-3"><pre class="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300" th:text="${modeResult.body != null ? modeResult.body : modeResult.friendlyMessage}">Resposta</pre></div></article>
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg" th:if="${orderResult != null}"><h2 class="text-xl font-semibold text-white">Criação do pedido</h2><dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm"><dt class="text-slate-400">Método</dt><dd class="font-mono text-slate-200" th:text="${orderResult.method}">POST</dd><dt class="text-slate-400">URL</dt><dd class="break-all font-mono text-slate-200" th:text="${orderResult.url}">URL</dd><dt class="text-slate-400">HTTP</dt><dd><span class="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-cyan-300" th:text="${orderResult.status != null ? orderResult.status : 'sem resposta HTTP'}">201</span></dd></dl><button type="button" class="mt-4 text-sm font-medium text-cyan-300 hover:text-cyan-200" data-collapse-toggle="technical-order" aria-expanded="false" aria-controls="technical-order">Ver resposta técnica</button><div id="technical-order" class="hidden mt-3"><pre class="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300" th:text="${orderResult.body != null ? orderResult.body : orderResult.friendlyMessage}">Resposta</pre></div></article>
+            <article class="rounded-xl border border-slate-700 bg-slate-900 p-6 shadow-lg" th:if="${resilienceResult != null}"><h2 class="text-xl font-semibold text-white">Status de resiliência</h2><dl class="mt-4 grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm"><dt class="text-slate-400">Método</dt><dd class="font-mono text-slate-200" th:text="${resilienceResult.method}">GET</dd><dt class="text-slate-400">URL</dt><dd class="break-all font-mono text-slate-200" th:text="${resilienceResult.url}">URL</dd><dt class="text-slate-400">HTTP</dt><dd><span class="rounded bg-slate-800 px-2 py-1 font-mono text-xs text-cyan-300" th:text="${resilienceResult.status != null ? resilienceResult.status : 'sem resposta HTTP'}">200</span></dd></dl><button type="button" class="mt-4 text-sm font-medium text-cyan-300 hover:text-cyan-200" data-collapse-toggle="technical-resilience" aria-expanded="false" aria-controls="technical-resilience">Ver resposta técnica</button><div id="technical-resilience" class="hidden mt-3"><pre class="overflow-x-auto rounded-lg bg-slate-950 p-3 text-xs text-slate-300" th:text="${resilienceResult.body != null ? resilienceResult.body : resilienceResult.friendlyMessage}">Resposta</pre></div></article>
+        </aside>
+    </div>
+</main>
+</body>
+</html>

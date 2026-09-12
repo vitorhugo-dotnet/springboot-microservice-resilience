@@ -18,12 +18,13 @@ import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.flash;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
-@WebMvcTest(value = DemoController.class, properties = "spring.thymeleaf.enabled=false")
+@WebMvcTest(DemoController.class)
 class DemoControllerTest {
 
     private static final ApiCallResult CURRENT_MODE = new ApiCallResult(
@@ -53,7 +54,14 @@ class DemoControllerTest {
                 .andExpect(view().name("index"))
                 .andExpect(model().attribute("modes", (Object) PaymentMode.values()))
                 .andExpect(model().attribute("currentModeResult", CURRENT_MODE))
-                .andExpect(model().attributeExists("orderForm"));
+                .andExpect(model().attributeExists("orderForm"))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("cdn.tailwindcss.com")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("flowbite")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SUCCESS")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("SLOW")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FAIL")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("FLAKY")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("DECLINED")));
     }
 
     @Test
